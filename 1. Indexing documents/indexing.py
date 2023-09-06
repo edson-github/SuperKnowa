@@ -69,8 +69,8 @@ def get_all_files(folder_name):
 
 ## Assuming files are in text format and cleaned
 def indexing_document(indexName,file_path,es_client):
-     today = date.today()
-     with open(file_path, 'r', encoding="latin1") as file:
+    today = date.today()
+    with open(file_path, 'r', encoding="latin1") as file:
         if ".txt" in file_path:
             content = file.read()
             print(len(content), file_path)
@@ -89,13 +89,13 @@ def indexing_document(indexName,file_path,es_client):
                 print("values ---",len(ld_val))
                 urls =  ld_val[0].split("URL:")
                 print(len(urls))
-            
+
                 url = "https://developer.ibm.com/blogs/"+urls[1]
 
                 indexing_date = today
                 source = "IBM Developer"
                 data = "{'id' : '"+str(title)+"', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'}"
-            
+
                 publish_date = publish_date.replace("\n","").strip()
                 updated_date = updated_date.replace("\n","").strip()
                 print(publish_date)
@@ -115,17 +115,17 @@ def indexing_document(indexName,file_path,es_client):
                 indexing_date = today
                 url =""
 
-            document ={
-            "id": ""+title+"",
-            "published_source": ""+source+"",
-            "publish_date": ""+str(publish_date)+"",
-            "last_update_date": ""+str(updated_date)+"",
-            "indexing_date": ""+str(indexing_date)+"",
-            "content": ""+content+"",
-            "url": ""+url+"",
-            "keywords": ""+str(sub_title)+"",
-            "categories": ""+str(categories)+"",
-        }
+            document = {
+                "id": "" + title + "",
+                "published_source": "" + source + "",
+                "publish_date": f"{str(publish_date)}",
+                "last_update_date": f"{str(updated_date)}",
+                "indexing_date": f"{str(indexing_date)}",
+                "content": "" + content + "",
+                "url": "" + url + "",
+                "keywords": f"{str(sub_title)}",
+                "categories": f"{str(categories)}",
+            }
         response = es_client.index(index=indexName, body=document)
         print(response)
     

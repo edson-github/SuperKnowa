@@ -30,13 +30,17 @@ class ProcessDiscovery:
         if hits:
             for i, hit in enumerate(hits):
                 query_hits = {
-                "document": {
-                    "rank": i,
-                    "document_id": hit["document_id"] if "document_id" in hit else None,
-                    "text": hit["text"][0][0:4000], # Only extracting first 1000 words
-                    "title": hit["title"] if "title" in hit else str(np.random.randint(1, 10))
-                },
-                "score": hit['result_metadata']['confidence'],
+                    "document": {
+                        "rank": i,
+                        "document_id": hit["document_id"]
+                        if "document_id" in hit
+                        else None,
+                        "text": hit["text"][0][:4000],
+                        "title": hit["title"]
+                        if "title" in hit
+                        else str(np.random.randint(1, 10)),
+                    },
+                    "score": hit['result_metadata']['confidence'],
                 }
 
                 results_list.append(query_hits)

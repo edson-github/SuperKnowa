@@ -21,35 +21,33 @@ model_size_mapping = {
 # Create an empty DataFrame
 leaderboard = pd.DataFrame(columns=['Model Name', 'Dataset', 'F1 Score', 'BERT Score', 'Blue Score', 'SentenceSim Score', 'Meteor Score', 'Rouge Score', 'SimHash Score', 'Perplexity Score', 'Bleurt Score', 'Count', 'Model Size'])
 
+# Extract dataset and model name using regex pattern
+pattern = r'^(.*?)_(.*)$'
 # Iterate over the scores files
 for file in csv_files:
     model_name = file.split(".")[0]
-    # Extract dataset and model name using regex pattern
-    pattern = r'^(.*?)_(.*)$'
-    match = re.match(pattern, model_name)
-    if match:
+    if match := re.match(pattern, model_name):
         dataset = match.group(1)
         model = match.group(2)
     else:
         dataset = ""
         model = model_name
-    
+
     # Get the model size based on the model name
     model_size = model_size_mapping.get(model, "")
 
     df = pd.read_csv(file)  # Assuming the scores are stored in CSV format
-        # Get the file's creation date
     creation_time = os.path.getctime(file)
     creation_time = datetime.datetime.fromtimestamp(creation_time).strftime('%Y-%m-%d') 
-    
-    
-    
+
+
+
     # Get the mean scores for available columns
     mean_scores = {}
     for score in leaderboard.columns[2:-2]:
-        # Perform a case-insensitive match for score column names
-        available_columns = [col for col in df.columns if col.lower() == score.lower()]
-        if available_columns:
+        if available_columns := [
+            col for col in df.columns if col.lower() == score.lower()
+        ]:
             if score not in ['SimHash Score', 'Perplexity Score', 'Bleurt Score']:
                 mean_scores[score] = df[available_columns[0]].mean() * 100  # Multiply score by 100
             else:

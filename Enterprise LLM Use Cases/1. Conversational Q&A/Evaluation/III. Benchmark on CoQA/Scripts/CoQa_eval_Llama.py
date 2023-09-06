@@ -101,23 +101,21 @@ def normalize_answer(s):
   return white_space_fix(remove_articles(remove_punc(lower(s))))
 
 def get_tokens(s):
-  if not s: return []
-  return normalize_answer(s).split()
+    return [] if not s else normalize_answer(s).split()
 
 def compute_f1(a_gold, a_pred):
-      gold_toks = get_tokens(a_gold)
-      pred_toks = get_tokens(a_pred)
-      common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
-      num_same = sum(common.values())
-      if len(gold_toks) == 0 or len(pred_toks) == 0:
-        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
-        return int(gold_toks == pred_toks)
-      if num_same == 0:
-        return 0
-      precision = 1.0 * num_same / len(pred_toks)
-      recall = 1.0 * num_same / len(gold_toks)
-      f1 = (2 * precision * recall) / (precision + recall)
-      return f1
+    gold_toks = get_tokens(a_gold)
+    pred_toks = get_tokens(a_pred)
+    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+    num_same = sum(common.values())
+    if len(gold_toks) == 0 or len(pred_toks) == 0:
+      # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+      return int(gold_toks == pred_toks)
+    if num_same == 0:
+      return 0
+    precision = 1.0 * num_same / len(pred_toks)
+    recall = 1.0 * num_same / len(gold_toks)
+    return (2 * precision * recall) / (precision + recall)
 
 def Sim_hash(ideal_answer,generated_answer):
     return Simhash(generated_answer).distance(Simhash(ideal_answer))
@@ -144,8 +142,7 @@ def calculate_perplexity(ideal_answer,answer):
             probability = frequency / total_tokens
         log_sum += math.log2(probability)
 
-    perplexity = 2 ** (-log_sum / len(answer_tokens))
-    return perplexity
+    return 2 ** (-log_sum / len(answer_tokens))
 
 def bleurt_score(ideal_answer,generated_answer):
 
@@ -184,9 +181,7 @@ def rouge(answer, ideal_answer):
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     # Calculate the ROUGE score
     score = scorer.score(answer, ideal_answer)
-    # Extract the F1 score for ROUGE-1
-    rouge_score = score['rouge1'].fmeasure
-    return rouge_score
+    return score['rouge1'].fmeasure
 
 # def calculate_mrr(ideal_answers,predictions):
 #     total_reciprocal_rank = 0
@@ -213,14 +208,14 @@ chat_history = ""
 df = pd.read_json("alpaca_data.json")
 df.columns = ["question","context","ideal_answer"]
 df=df[df.context != ""].reset_index().drop("index",axis=1)
-df=df[0:10]
+df = df[:10]
 
 print("----- length",len(df.question))
 ans = []
 
 
 quantization_config = BitsAndBytesConfig(llm_int8_enable_fp32_cpu_offload=True)
- 
+
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -230,7 +225,7 @@ load_8bit: bool = False,
 base_model: str = "decapoda-research/llama-7b-hf",
 lora_weights: str = "/root/finetune/experiments",
 
-    
+
 
 tokenizer = LlamaTokenizer.from_pretrained("decapoda-research/llama-7b-hf")
 model = LlamaForCausalLM.from_pretrained(
@@ -242,14 +237,6 @@ model = LlamaForCausalLM.from_pretrained(
     quantization_config=quantization_config,
     )
 
-# model = PeftModel.from_pretrained(
-#             model,
-#             "/root/finetune/experiments",
-#             device_map={"": DEVICE},
-#             torch_dtype=torch.float16,
-#         )
-
-    # unwind broken decapoda-research config
 model.config.pad_token_id = tokenizer.pad_token_id = 0  # unk
 model.config.bos_token_id = 1
 model.config.eos_token_id = 2
@@ -320,7 +307,7 @@ def generate_prompt(instruction, input=None):
 
 
 
-max_retries = 3 
+max_retries = 3
 for i in range(len(df.question)):
 
     retries = 0
@@ -330,16 +317,23 @@ for i in range(len(df.question)):
             print("---------- question",df.question[i])
             print("---------- question No:",i)
 
-            chat_history = f"Answer the question based on the context below. " + \
-                "Context: "  + df.context[i] + \
-                " Question: " + df.question[i]
+            chat_history = (
+                (
+                    (
+                        "Answer the question based on the context below. "
+                        + "Context: "
+                    )
+                    + df.context[i]
+                )
+                + " Question: "
+            ) + df.question[i]
 
             result = evaluate(chat_history)
             print("FINAL ANSWER: ", result)
 
             # chat_history += f"{model_output}<split>"
             model_output1 = f"{result}<split>"  
-            
+
             print("FINAL ANSWER: ", model_output1)
 
 

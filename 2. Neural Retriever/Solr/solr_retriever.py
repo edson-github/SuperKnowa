@@ -62,53 +62,57 @@ def pre_processingtext(text_data):
 max_num_documents=10
 
 def solr_reteriver(question):
-    response = requests.get(f'http://150.239.171.68:8983/solr/superknowa/select?q='+question+'&q.op=AND&wt=json')
-    query_result = response.json()
-    
-   # print("SOLR RESPONSE:", json.dumps(query_result, indent=2))
-    print(query_result['response']['numFound'], "documents found.")
-    total = query_result['response']['numFound']
-    results_list=[]
-    query_hits={}
-    if total > 0:
-        if total > 10:
-            total =10
-        for i in range(total):
-                string_unicode = query_result['response']['docs'][i]['content'][0]
-                doc = string_unicode.encode("ascii", "ignore")
-                string_decode = doc.decode()
-                keyword = "{: shortdesc} "
-                cleaned_text = skip_unwanted_characters(string_decode, keyword)
-                pattern =  r'\{\s*:\s*[\w#-]+\s*\}|\{\s*:\s*\w+\s*\}|\n\s*\n'
-                cleaned_text = re.sub(pattern, '', cleaned_text)
-                cleaned_text = pre_processingtext(cleaned_text)
-                query_hits = {
-                "document": {
-                    "rank": i,
-                    "document_id": query_result['response']['docs'][i]['id'][0],
-                    "text": cleaned_text[0:4000], 
-                    "url" :query_result['response']['docs'][i]['url'][0].replace(" ","")
-                },
-            }
+        response = requests.get(
+            'http://150.239.171.68:8983/solr/superknowa/select?q=' + question +
+            '&q.op=AND&wt=json')
+        query_result = response.json()
 
-                results_list.append(query_hits)
-                results_to_display = [results_list['document'] for results_list in results_list]
-                df = pd.DataFrame.from_records(results_to_display, columns=['rank','document_id','text','url'])
-                # df['title'] = np.random.randint(1, 10, df.shape[0])
-                df.dropna(inplace=True)
-                print('======================================================================')             
-    print(f'QUERY: {question}')
-    return results_list
+   # print("SOLR RESPONSE:", json.dumps(query_result, indent=2))
+        print(query_result['response']['numFound'], "documents found.")
+        total = query_result['response']['numFound']
+        results_list=[]
+        query_hits={}
+        if total > 0:
+                total = min(total, 10)
+                keyword = "{: shortdesc} "
+                pattern =  r'\{\s*:\s*[\w#-]+\s*\}|\{\s*:\s*\w+\s*\}|\n\s*\n'
+                for i in range(total):
+                        string_unicode = query_result['response']['docs'][i]['content'][0]
+                        doc = string_unicode.encode("ascii", "ignore")
+                        string_decode = doc.decode()
+                        cleaned_text = skip_unwanted_characters(string_decode, keyword)
+                        cleaned_text = re.sub(pattern, '', cleaned_text)
+                        cleaned_text = pre_processingtext(cleaned_text)
+                        query_hits = {
+                            "document": {
+                                "rank":
+                                i,
+                                "document_id":
+                                query_result['response']['docs'][i]['id'][0],
+                                "text":
+                                cleaned_text[:4000],
+                                "url":
+                                query_result['response']['docs'][i]['url']
+                                [0].replace(" ", ""),
+                            }
+                        }
+
+                        results_list.append(query_hits)
+                        results_to_display = [results_list['document'] for results_list in results_list]
+                        df = pd.DataFrame.from_records(results_to_display, columns=['rank','document_id','text','url'])
+                        # df['title'] = np.random.randint(1, 10, df.shape[0])
+                        df.dropna(inplace=True)
+                        print('======================================================================')
+        print(f'QUERY: {question}')
+        return results_list
 
 ## format string 
 def format_string(doc):
-    doc = doc.encode("ascii", "ignore")
-    string_decode = doc.decode()
-    cleantext = BeautifulSoup(string_decode, "lxml").text
-    perfecttext = " ".join(cleantext.split())
-    perfecttext = re.sub(' +', ' ', perfecttext).strip('"')
-#     perfecttext = perfecttext[0:4000]
-    return perfecttext
+        doc = doc.encode("ascii", "ignore")
+        string_decode = doc.decode()
+        cleantext = BeautifulSoup(string_decode, "lxml").text
+        perfecttext = " ".join(cleantext.split())
+        return re.sub(' +', ' ', perfecttext).strip('"')
 
 def main():
     question = "what is ibm cloud pak for data"

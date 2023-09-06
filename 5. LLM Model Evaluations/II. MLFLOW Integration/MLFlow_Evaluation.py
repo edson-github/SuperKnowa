@@ -37,13 +37,12 @@ mlflow.log_param('model_size_mapping', model_size_mapping)
 # Create an empty DataFrame
 leaderboard = pd.DataFrame(columns=['Model Name', 'Dataset', 'F1 Score', 'BERT Score', 'Blue Score', 'SentenceSim Score', 'Meteor Score', 'Rouge Score', 'SimHash Score', 'Perplexity Score', 'Bleurt Score', 'Count', 'Model Size'])
 
+# Extract dataset and model name using regex pattern
+pattern = r'^(.*?)_(.*)$'
 # Iterate over the scores files
 for file in csv_files:
     model_name = file.split(".")[0]
-    # Extract dataset and model name using regex pattern
-    pattern = r'^(.*?)_(.*)$'
-    match = re.match(pattern, model_name)
-    if match:
+    if match := re.match(pattern, model_name):
         dataset = match.group(1)
         model = match.group(2)
     else:
@@ -61,9 +60,9 @@ for file in csv_files:
     # Get the mean scores for available columns
     mean_scores = {}
     for score in leaderboard.columns[2:-2]:
-        # Perform a case-insensitive match for score column names
-        available_columns = [col for col in df.columns if col.lower() == score.lower()]
-        if available_columns:
+        if available_columns := [
+            col for col in df.columns if col.lower() == score.lower()
+        ]:
             if score not in ['SimHash Score', 'Perplexity Score', 'Bleurt Score']:
                 mean_scores[score] = df[available_columns[0]].mean() * 100  # Multiply score by 100
             else:
@@ -71,7 +70,7 @@ for file in csv_files:
         else:
             mean_scores[score] = None  # Assign null or any other desired value
 
- 
+
     leaderboard = leaderboard.append(
         {'Model Name': model, 'Evaluated on': dataset, **mean_scores, 'Experiment Date': creation_time,
          'Count': len(df), 'Model Size': model_size}, ignore_index=True)
@@ -94,7 +93,7 @@ for index, row in result.iterrows():
     f1_score_value = row['F1 Score']
     value = row['Model Name']+"_"+row['Evaluated on']
     mlflow.log_metric(value , f1_score_value)
-    
+
 
 
 Parameters ={
@@ -156,8 +155,8 @@ for score in scores:
     plt.show()
     print("\n\n\n")
 
-   
-    
+
+
 result.to_csv("Result/leaderboard.csv", index=False)
 # Log leaderboard as artifact
 mlflow.log_artifact("Result/leaderboard.csv")

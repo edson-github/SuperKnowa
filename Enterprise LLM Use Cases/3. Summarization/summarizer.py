@@ -16,20 +16,16 @@ configs = Properties()
 # load properties into configs
 with open('app-config.properties', 'rb') as config_file:
     configs.load(config_file)
-# read into dictionary
-configs_dict = {}
 items_view = configs.items()
-for item in items_view:
-    configs_dict[item[0]] = item[1].data
-
+configs_dict = {item[0]: item[1].data for item in items_view}
 # For LLM call
 SERVER_URL = configs_dict['SERVER_URL']
 API_KEY = os.getenv("WATSONX_API_KEY", default="")
 HEADERS = {
-        'accept': 'application/json',
-        'content-type': 'application/json',
-        'Authorization': 'Bearer {}'.format(API_KEY)
-    }
+    'accept': 'application/json',
+    'content-type': 'application/json',
+    'Authorization': f'Bearer {API_KEY}',
+}
 
 # ---- UI code ----
 
@@ -175,9 +171,9 @@ def get_payloads(text):
     payloads_output = []
     labels = configs_dict['generate_btn_output_labels'].split(',')
     payloads = configs_dict['generate_btn_payload_files'].split(',')
-    
+
     for label, payload_file, n in zip(labels, payloads, range(len(payloads))):
-        with open('payload/{}.json'.format(payload_file)) as payload_f:
+        with open(f'payload/{payload_file}.json') as payload_f:
             payload_f_json = json.load(payload_f)
         payload_f_json['inputs'] = [text+" \n\nSummary"]
         payload_f_json = json.dumps(payload_f_json, indent=2)
@@ -196,18 +192,18 @@ def get_payloads(text):
 
 # Parsing output as per type
 def parse_output(res, type):
-    parseoutput = []
     if(type == 'text'):
         return res
-    if(type == 'label'):
-        return html.H5(dbc.Badge(res, color="#1192e8", style={'borderRadius': '12px','marginLeft':'8px','paddingLeft':'16px', 'paddingRight':'16px'}))
-    elif(type == 'key-value'):
+    if type == 'key-value':
         pairs = res.split(',')
+        parseoutput = []
         for pair in pairs:
             k, v = pair.split(':')
             parseoutput.append(html.Div([html.B(k+':'), v], className="key-value-div"))
         return html.Div(parseoutput, className="key-value-div-parent")
-    elif(type == 'markdown'):
+    elif type == 'label':
+        return html.H5(dbc.Badge(res, color="#1192e8", style={'borderRadius': '12px','marginLeft':'8px','paddingLeft':'16px', 'paddingRight':'16px'}))
+    elif type == 'markdown':
         return dcc.Markdown(md(res))
 
 # LLM API call
@@ -231,7 +227,7 @@ def parse_contents(contents, filename, date):
     decoded = base64.b64decode(content_string)
     try:
         f = io.StringIO(decoded.decode('utf-8'))
-        return f.getvalue()[0:2000]
+        return f.getvalue()[:2000]
     except Exception as e:
         print(e)
         return "There is some error while processing the file."
@@ -262,13 +258,13 @@ def generate_output_llm(n, text):
     types = configs_dict['generate_btn_output_types'].split(',')
 
     for action, label, payload_file, type in zip(actions, labels, payloads, types):
-        with open('payload/{}.json'.format(payload_file)) as payload_f:
+        with open(f'payload/{payload_file}.json') as payload_f:
             payload_f_json = json.load(payload_f)
 
-        if(action == "llm"):
-            output.append(html.Div([html.H5(label), llm_fn(text, payload_f_json, type)], className="output-div"))
-        elif(action == "custom"):
+        if action == "custom":
             output.append(html.Div([html.H5(label), custom_api_fn(text, payload_f_json, type)], className="output-div"))
+        elif action == "llm":
+            output.append(html.Div([html.H5(label), llm_fn(text, payload_f_json, type)], className="output-div"))
     return output
 
 # For loading spinner
@@ -291,9 +287,7 @@ def generate_output_llm(n, text):
 )
 def toggle_payload_modal(n1, is_open, text):
     if n1:
-        op=[]
-        if(not is_open):
-            op=get_payloads(text)
+        op = get_payloads(text) if (not is_open) else []
         return not is_open,op
     return is_open, []
 

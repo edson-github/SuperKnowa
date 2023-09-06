@@ -12,10 +12,10 @@ CUSTOM_API_KEY = os.getenv("CUSTOM_API_KEY", default="")
 
 # Update headers as per need
 CUSTOM_API_HEADERS = {
-        'accept': 'application/json',
-        'content-type': 'application/json',
-        'Authorization': 'Bearer {}'.format(CUSTOM_API_KEY)
-    }
+    'accept': 'application/json',
+    'content-type': 'application/json',
+    'Authorization': f'Bearer {CUSTOM_API_KEY}',
+}
 
 # text = user input from the text area,
 # custom_payload_json = your payload file as provided in app-config

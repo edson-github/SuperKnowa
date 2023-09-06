@@ -43,25 +43,22 @@ class RajkumarFormatter:
 
     def format_table(self, table: Table) -> str:
         """Get table format."""
-        table_fmt = []
         table_name = table.name
-        for col in table.columns or []:
-            # This is technically an incorrect type, but it should be a catchall word
-            table_fmt.append(f"    {col.name} {col.dtype or 'any'}")
+        table_fmt = [
+            f"    {col.name} {col.dtype or 'any'}" for col in table.columns or []
+        ]
         if table.pks:
             table_fmt.append(
                 f"    primary key ({', '.join(pk.name for pk in table.pks)})"
             )
-        for fk in table.fks or []:
-            table_fmt.append(
-                f"    foreign key ({fk.column.name}) references {fk.references_name}({fk.references_column.name})"  # noqa: E501
-            )
-        if table_fmt:
-            all_cols = ",\n".join(table_fmt)
-            create_tbl = f"CREATE TABLE {table_name} (\n{all_cols}\n)"
-        else:
-            create_tbl = f"CREATE TABLE {table_name}"
-        return create_tbl
+        table_fmt.extend(
+            f"    foreign key ({fk.column.name}) references {fk.references_name}({fk.references_column.name})"
+            for fk in table.fks or []
+        )
+        if not table_fmt:
+            return f"CREATE TABLE {table_name}"
+        all_cols = ",\n".join(table_fmt)
+        return f"CREATE TABLE {table_name} (\n{all_cols}\n)"
 
     def format_tables(self, tables: list[Table]) -> str:
         """Get tables format."""
@@ -81,5 +78,5 @@ class RajkumarFormatter:
         Our prompt ends with SELECT so we need to add it back.
         """
         if not output_sql.lower().startswith("select"):
-            output_sql = "SELECT " + output_sql.strip()
+            output_sql = f"SELECT {output_sql.strip()}"
         return output_sql

@@ -35,13 +35,12 @@ def get_all_files(folder_name):
 def readdata_frompdf(file_name):
     content=''
     try:
-        pdfFileObj = open(file_name, 'rb')
-        pdfReader = PyPDF2.PdfReader(pdfFileObj)
-        for i in range(len(pdfReader.pages)):
-            pageObj = pdfReader.pages[i]
-            content =content+" "+pageObj.extract_text()
+        with open(file_name, 'rb') as pdfFileObj:
+            pdfReader = PyPDF2.PdfReader(pdfFileObj)
+            for i in range(len(pdfReader.pages)):
+                pageObj = pdfReader.pages[i]
+                content =content+" "+pageObj.extract_text()
 
-        pdfFileObj.close()
         return content
     except:
          print("file is empty")
@@ -87,7 +86,7 @@ def index_ibm_developerdata():
             data = "{'id' : '"+str(title)+"', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'}"
             #df = pd.DataFrame({'id' : '""+str(title)+""', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'},index=[i])
             #print(df.to_json(orient="split"))
-            
+
             #json_object = json.loads(data)
             publish_date = publish_date.replace("\n","").strip()
             updated_date = updated_date.replace("\n","").strip()
@@ -99,25 +98,27 @@ def index_ibm_developerdata():
             updated_date_obj = datetime.strptime(updated_date,"%Y-%m-%dT%H:%M:%S")
             updated_date = updated_date_obj.date()
 
-        
-            solrdocs.append({
-            "id": ""+title+"",
-            "published_source": ""+source+"",
-            "publish_date": ""+str(publish_date)+"",
-            "last_update_date": ""+str(updated_date)+"",
-            "indexing_date": ""+str(indexing_date)+"",
-            "content": ""+content+"",
-            "url": ""+url+"",
-            "keywords": ""+str(sub_title)+"",
-            "categories": ""+str(categories)+"",
-        })
+
+            solrdocs.append(
+                {
+                    "id": "" + title + "",
+                    "published_source": f"{source}",
+                    "publish_date": f"{str(publish_date)}",
+                    "last_update_date": f"{str(updated_date)}",
+                    "indexing_date": f"{str(indexing_date)}",
+                    "content": "" + content + "",
+                    "url": "" + url + "",
+                    "keywords": f"{str(sub_title)}",
+                    "categories": f"{str(categories)}",
+                }
+            )
         
  ## indexing white paper data        
 def indexwhitepaerdata():
     for filename in os.listdir(white_paper_docs_dir):
         print("processing i---",i)
         file_path = os.path.join(white_paper_docs_dir, filename)
-        
+
         # Read the contents of the file
         headers = {
                 "X-Tika-OCRLanguage": "eng",
@@ -144,7 +145,7 @@ def indexwhitepaerdata():
                 j=1
                 if len(attachment) >1:
                     for att in attachment:
-                        print("Value",att)     
+                        print("Value",att)
                         #file_name = att.replace("https://www.ibm.com/support/pages/system/files/inline-files/","")
                         file_name = os.path.basename(att)
                         print(file_name)
@@ -170,52 +171,54 @@ def indexwhitepaerdata():
 
                         title = title+"_"+str(i)
                         if extracted_text is not None:
-                            solrdocs.append({
-                    "id": ""+title+"",
-                    "published_source": ""+source+"",
-                    "publish_date": ""+str(publish_date)+"",
-                    "last_update_date": ""+str(updated_date)+"",
-                    "indexing_date": ""+str(indexing_date)+"",
-                    "content": ""+extracted_text+"",
-                    "url": ""+url+"",
-                    "keywords": "",
-                    "categories": "",
-                })
-                            
-                else:
-                    if len(attachment) ==1:
-                        file_name = os.path.basename(attachment[0])
-                        print(file_name)
-                        file_path = white_paper_docs_dir+file_name
-                        path = Path(file_path)
-                        if path.is_file():
-                            #parsed_content = parser.from_file(file_path,requestOptions={'headers': headers, 'timeout': 500})
-                            #extracted_text = parsed_content['content']
-                            extracted_text = readdata_frompdf(file_path)
-                        if extracted_text is not None:
-                            solrdocs.append({
-                        "id": ""+title+"",
-                        "published_source": ""+source+"",
-                        "publish_date": ""+str(publish_date)+"",
-                        "last_update_date": ""+str(updated_date)+"",
-                        "indexing_date": ""+str(indexing_date)+"",
-                        "content": ""+extracted_text+"",
-                        "url": ""+url+"",
-                        "keywords": "",
-                        "categories": "",
-                })
+                            solrdocs.append(
+                                {
+                                    "id": "" + title + "",
+                                    "published_source": f"{source}",
+                                    "publish_date": f"{str(publish_date)}",
+                                    "last_update_date": f"{str(updated_date)}",
+                                    "indexing_date": f"{str(indexing_date)}",
+                                    "content": "" + extracted_text + "",
+                                    "url": "" + url + "",
+                                    "keywords": "",
+                                    "categories": "",
+                                }
+                            )
+
+                elif len(attachment) ==1:
+                    file_name = os.path.basename(attachment[0])
+                    print(file_name)
+                    file_path = white_paper_docs_dir+file_name
+                    path = Path(file_path)
+                    if path.is_file():
+                        #parsed_content = parser.from_file(file_path,requestOptions={'headers': headers, 'timeout': 500})
+                        #extracted_text = parsed_content['content']
+                        extracted_text = readdata_frompdf(file_path)
+                    if extracted_text is not None:
+                        solrdocs.append(
+                            {
+                                "id": "" + title + "",
+                                "published_source": f"{source}",
+                                "publish_date": f"{str(publish_date)}",
+                                "last_update_date": f"{str(updated_date)}",
+                                "indexing_date": f"{str(indexing_date)}",
+                                "content": "" + extracted_text + "",
+                                "url": "" + url + "",
+                                "keywords": "",
+                                "categories": "",
+                            }
+                        )
 
    ## indexing redbooks data 
 def redbooks_indexing():
     for filename in os.listdir(redbooks_data_dir):
         print("processing i---",i)
         file_path = os.path.join(redbooks_data_dir, filename)
-        
+
         with open(file_path, 'r', encoding="latin1") as file:
             extracted_text=''
             if ".json" in file_path:
                 content = file.read()
-                source ="Redbooks"
                 content_list = content.split("\n")
                 publish_date = content_list[2].replace("publish_date: ","")
                 updated_date = content_list[1].replace("updated_date: ","")
@@ -228,17 +231,20 @@ def redbooks_indexing():
                 file_path= redbooks_data_dir+file_name
                 extracted_text = readdata_frompdf(file_path)
                 if extracted_text is not None:
-                                solrdocs.append({
-                            "id": ""+file_name.replace(".pdf","")+"",
-                            "published_source": ""+source+"",
-                            "publish_date": ""+str(publish_date)+"",
-                            "last_update_date": ""+str(updated_date)+"",
-                            "indexing_date": ""+str(indexing_date)+"",
-                            "content": ""+extracted_text+"",
-                            "url": ""+url+"",
+                    source ="Redbooks"
+                    solrdocs.append(
+                        {
+                            "id": "" + file_name.replace(".pdf", "") + "",
+                            "published_source": f"{source}",
+                            "publish_date": f"{str(publish_date)}",
+                            "last_update_date": f"{str(updated_date)}",
+                            "indexing_date": f"{str(indexing_date)}",
+                            "content": "" + extracted_text + "",
+                            "url": "" + url + "",
                             "keywords": "",
                             "categories": "",
-                    })
+                        }
+                    )
 
                 if i ==100:
                     solr.add(solrdocs)
@@ -317,37 +323,38 @@ def ibm_cloud_docs():
                 last_updated = last_updated_data[0].replace("\"","").strip().replace(" subcollection: assistant }","").split(" ")[0]
                 if len(last_updated) < 6:
                     last_updated = today
-                else:
-                    if '/' in last_updated:
-                        last_updated = last_updated.replace("/","-") 
+                elif '/' in last_updated:
+                    last_updated = last_updated.replace("/","-")
                 last_updated=last_updated.encode("ascii", "ignore")
                 last_updated = last_updated.replace("b'","-") 
-            
-                
+
+
                 with open(file_name, 'r', encoding="latin1") as file:
                     extracted_text=''
                     extracted_text = file.read()
                     source ="IBM Developer docs"
                     print(content)
-                
+
                 file_name_val = file_name.replace("/ibm_cloud_docs_process_metdata_new/","")
                 id = file_name_val.replace(".txt","")+"_"+source+str(i)
                 if extracted_text is not None:
-                            solrdocs.append({
-                                    "id": ""+file_name_val.replace(".txt","")+"",
-                                    "published_source": ""+source+"",
-                                    "publish_date": ""+str(last_updated)+"",
-                                    "last_update_date": ""+str(last_updated)+"",
-                                    "indexing_date": ""+str(today)+"",
-                                    "content": ""+extracted_text+"",
-                                    "url": ""+url+"",
-                                    "keywords": ""+keywords+"",
-                                    "categories": "",
-                            })
+                    solrdocs.append(
+                        {
+                            "id": "" + file_name_val.replace(".txt", "") + "",
+                            "published_source": f"{source}",
+                            "publish_date": f"{str(last_updated)}",
+                            "last_update_date": f"{str(last_updated)}",
+                            "indexing_date": f"{str(today)}",
+                            "content": "" + extracted_text + "",
+                            "url": "" + url + "",
+                            "keywords": "" + keywords + "",
+                            "categories": "",
+                        }
+                    )
             except:
                 i = i+1
                 continue
-            
+
             if j == 100:
                 try:
                     solr.add(solrdocs)
@@ -363,56 +370,58 @@ def ibm_doc_index():
     for filename in os.listdir(ibm_docs_dir):
         file_path = os.path.join(ibm_docs_dir, filename)
         with open(file_path, 'r', encoding="latin1") as file:
-                if ".txt" in file_path:
-                    content = file.read()
-                    print(len(content), file_path)
-                    content_value = content.split("content:")
-                    content = pre_processingtext(content_value[1])
-                    categories_val = content_value[0].split("categories:")
-                    categories = categories_val[1]
-                    sub_title =  categories_val[0].split("sub_title:")
-                    title_val =  sub_title[0].split("title:")
-                    title = title_val[1]
-                    pd_val =  title_val[0].split("publish_date:")
-                    publish_date = pd_val[1]
-                    ld_val =  pd_val[0].split("updated_date:")
-                    updated_date = ld_val[1]
-                    print("values ---",len(ld_val))
-                    urls =  ld_val[0].split("URL:")
-                    print(len(urls))
-                    #https://developer.ibm.com/blogs/
+            if ".txt" in file_path:
+                content = file.read()
+                print(len(content), file_path)
+                content_value = content.split("content:")
+                content = pre_processingtext(content_value[1])
+                categories_val = content_value[0].split("categories:")
+                categories = categories_val[1]
+                sub_title =  categories_val[0].split("sub_title:")
+                title_val =  sub_title[0].split("title:")
+                title = title_val[1]
+                pd_val =  title_val[0].split("publish_date:")
+                publish_date = pd_val[1]
+                ld_val =  pd_val[0].split("updated_date:")
+                updated_date = ld_val[1]
+                print("values ---",len(ld_val))
+                urls =  ld_val[0].split("URL:")
+                print(len(urls))
+                #https://developer.ibm.com/blogs/
                 # url = "https://developer.ibm.com/middleware/v1/contents"+urls[1]
-                    url = "https://developer.ibm.com"+urls[1].strip()+'/'
+                url = "https://developer.ibm.com"+urls[1].strip()+'/'
 
-                    indexing_date = today
-                    source = "IBM Developer"
-                    data = "{'id' : '"+str(title)+"', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'}"
-                    #df = pd.DataFrame({'id' : '""+str(title)+""', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'},index=[i])
-                    #print(df.to_json(orient="split"))
-                    
-                    #json_object = json.loads(data)
-                    publish_date = publish_date.replace("\n","").strip()
-                    updated_date = updated_date.replace("\n","").strip()
-                    print(publish_date)
-                    print("update_date ",updated_date)
-                    publish_date_obj = datetime.strptime(publish_date,"%Y-%m-%dT%H:%M:%S")
-                    publish_date = publish_date_obj.date()
+                indexing_date = today
+                source = "IBM Developer"
+                data = "{'id' : '"+str(title)+"', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'}"
+                #df = pd.DataFrame({'id' : '""+str(title)+""', 'published_source' : '"+source+"', 'publish_date' : '"+str(publish_date)+"','last_update_date' : '"+str(updated_date)+"','indexing_data' : '"+str(indexing_date)+"', 'url' : '"+url+"','content' : '"+str(content)+"','keywords' : '"+str(sub_title)+"','categories' : '"+str(categories)+"'},index=[i])
+                #print(df.to_json(orient="split"))
 
-                    updated_date_obj = datetime.strptime(updated_date,"%Y-%m-%dT%H:%M:%S")
-                    updated_date = updated_date_obj.date()
+                #json_object = json.loads(data)
+                publish_date = publish_date.replace("\n","").strip()
+                updated_date = updated_date.replace("\n","").strip()
+                print(publish_date)
+                print("update_date ",updated_date)
+                publish_date_obj = datetime.strptime(publish_date,"%Y-%m-%dT%H:%M:%S")
+                publish_date = publish_date_obj.date()
 
-                
-                    solrdocs.append({
-                    "id": ""+title+"",
-                    "published_source": ""+source+"",
-                    "publish_date": ""+str(publish_date)+"",
-                    "last_update_date": ""+str(updated_date)+"",
-                    "indexing_date": ""+str(indexing_date)+"",
-                    "content": ""+content+"",
-                    "url": ""+url+"",
-                    "keywords": ""+str(sub_title)+"",
-                    "categories": ""+str(categories)+"",
-                })
+                updated_date_obj = datetime.strptime(updated_date,"%Y-%m-%dT%H:%M:%S")
+                updated_date = updated_date_obj.date()
+
+
+                solrdocs.append(
+                    {
+                        "id": "" + title + "",
+                        "published_source": f"{source}",
+                        "publish_date": f"{str(publish_date)}",
+                        "last_update_date": f"{str(updated_date)}",
+                        "indexing_date": f"{str(indexing_date)}",
+                        "content": "" + content + "",
+                        "url": "" + url + "",
+                        "keywords": f"{str(sub_title)}",
+                        "categories": f"{str(categories)}",
+                    }
+                )
 
 
 
@@ -426,7 +435,7 @@ def downloadFile(url, fileName):
 
 
 # Directory containing the documents
-ibm_docs_dir = '/Scraper/scrape_data/ibm_docs/data-2/' 
+ibm_docs_dir = '/Scraper/scrape_data/ibm_docs/data-2/'
 white_paper_docs_dir ='/Scraper/scrape_data/white_paper_metadata/data-2/'
 redbooks_data_dir ='/Scraper/scrape_data/redbooks_data/'
 ibm_cloud_docs_dir ='/ibm_cloud_docs_process_metdata_new/'
@@ -436,7 +445,7 @@ ibm_medium_blog_csv ='/Scraper/scrape_data/Medium/csv'
 
 
 # Connect to Solr Please provide your solr url 
-solr = pysolr.Solr('XXXXX', always_commit=True,timeout=50) 
+solr = pysolr.Solr('XXXXX', always_commit=True,timeout=50)
 # Iterate over the files in the directory
 solrdocs =[]
 i = 0
@@ -446,38 +455,40 @@ print(type(file_path_list_medium))
 for filename in os.listdir(ibm_medium_blog_csv):
     file_path = os.path.join(ibm_medium_blog_csv, filename)
     with open(file_path, 'r', encoding="latin1") as file:
-            if ".csv" in file_path:
-                content = ''
-                df = pd.read_csv(file_path, sep='\t')
-                for ind in df.index:
-                    title = df['title'][ind]
-                    sub_title = df['subtitle'][ind]
-                    url  =  df['story_url'][ind]
-                    publish_date = today
-                    updated_date = today
-                    file_name = str(ibm_medium_blog+"/"+title+".txt")
-                    print(file_name)
-                    if file_name in file_path_list_medium:
-                        with open(file_name, 'r', encoding="latin1") as file1:
-                                content = file1.read()
-                               
-                    indexing_date = today
-                    source = "Medium"
-                    categories=''
-                    
-                    print(content)
+        if ".csv" in file_path:
+            content = ''
+            df = pd.read_csv(file_path, sep='\t')
+            source = "Medium"
+            categories=''
 
-                    solrdocs.append({
-                        "id": ""+title+"",
-                        "published_source": ""+source+"",
-                        "publish_date": ""+str(publish_date)+"",
-                        "last_update_date": ""+str(updated_date)+"",
-                        "indexing_date": ""+str(indexing_date)+"",
-                        "content": ""+content+"",
-                        "url": ""+url+"",
-                        "keywords": ""+str(sub_title)+"",
-                        "categories": ""+str(categories)+"",
-                    })
+            for ind in df.index:
+                title = df['title'][ind]
+                sub_title = df['subtitle'][ind]
+                url  =  df['story_url'][ind]
+                publish_date = today
+                updated_date = today
+                file_name = str(f"{ibm_medium_blog}/" + title + ".txt")
+                print(file_name)
+                if file_name in file_path_list_medium:
+                    with open(file_name, 'r', encoding="latin1") as file1:
+                            content = file1.read()
+
+                indexing_date = today
+                print(content)
+
+                solrdocs.append(
+                    {
+                        "id": "" + title + "",
+                        "published_source": f"{source}",
+                        "publish_date": f"{str(publish_date)}",
+                        "last_update_date": f"{str(updated_date)}",
+                        "indexing_date": f"{str(indexing_date)}",
+                        "content": "" + content + "",
+                        "url": "" + url + "",
+                        "keywords": f"{str(sub_title)}",
+                        "categories": f"{categories}",
+                    }
+                )
 
 solr.add(solrdocs)
 print("indexed data scussefully")

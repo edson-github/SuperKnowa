@@ -47,8 +47,8 @@ class Config:
         # remove duplicates SENTENCES
         unique_sentences = list( dict.fromkeys(sentences))
 
-        if(len(unique_sentences) == 1):
-            return unique_sentences[0].strip().capitalize() + "."
+        if (len(unique_sentences) == 1):
+            return f"{unique_sentences[0].strip().capitalize()}."
 
         if not model_output.endswith("."):
         # remove the last sentence if not . at last

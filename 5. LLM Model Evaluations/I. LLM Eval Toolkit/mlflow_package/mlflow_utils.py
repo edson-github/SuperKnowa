@@ -57,9 +57,9 @@ def run_mlflow(dataset_path):
         # Get the mean scores for available columns
         mean_scores = {}
         for score in leaderboard.columns[2:-2]:
-            # Perform a case-insensitive match for score column names
-            available_columns = [col for col in df.columns if col.lower() == score.lower()]
-            if available_columns:
+            if available_columns := [
+                col for col in df.columns if col.lower() == score.lower()
+            ]:
                 if score not in ['SimHash Score', 'Perplexity Score', 'Bleurt Score']:
                     mean_scores[score] = df[available_columns[0]].mean() * 100  # Multiply score by 100
                 else:

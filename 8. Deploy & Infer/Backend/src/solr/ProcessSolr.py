@@ -74,37 +74,40 @@ class ProcessSolr:
         # Make solr requests
         response = requests.get(solr_requst_url)
         query_result = response.json()
-        
+
         # print("SOLR RESPONSE:", json.dumps(query_result, indent=2))
         print(query_result['response']['numFound'], "documents found.")
         total = query_result['response']['numFound']
         results_list=[]
         query_hits={}
         if total > 0:
-            if total > 10:
-                total =10
+            total = min(total, 10)
+            keyword = "{: shortdesc} "
+            pattern =  r'\{\s*:\s*[\w#-]+\s*\}|\{\s*:\s*\w+\s*\}|\n\s*\n'
             for i in range(total):
-                    string_unicode = " ".join(query_result['response']['docs'][i]['content'])
-                    doc = string_unicode.encode("ascii", "ignore")
-                    string_decode = doc.decode()
-                    keyword = "{: shortdesc} "
-                    cleaned_text = self.skip_unwanted_characters(string_decode, keyword)
-                    pattern =  r'\{\s*:\s*[\w#-]+\s*\}|\{\s*:\s*\w+\s*\}|\n\s*\n'
-                    cleaned_text = re.sub(pattern, '', cleaned_text)
-                    cleaned_text = self.pre_processingtext(cleaned_text)
-                    query_hits = {
-                    "document": {   
+                string_unicode = " ".join(query_result['response']['docs'][i]['content'])
+                doc = string_unicode.encode("ascii", "ignore")
+                string_decode = doc.decode()
+                cleaned_text = self.skip_unwanted_characters(string_decode, keyword)
+                cleaned_text = re.sub(pattern, '', cleaned_text)
+                cleaned_text = self.pre_processingtext(cleaned_text)
+                query_hits = {
+                    "document": {
                         "rank": i,
-                        "document_id": query_result['response']['docs'][i]['id'][0],
-                        "text": cleaned_text[0:4000], 
-                        "url" :query_result['response']['docs'][i]['url'][0].replace(" ","")
-                        },
+                        "document_id": query_result['response']['docs'][i]['id'][
+                            0
+                        ],
+                        "text": cleaned_text[:4000],
+                        "url": query_result['response']['docs'][i]['url'][
+                            0
+                        ].replace(" ", ""),
                     }
+                }
 
-                    results_list.append(query_hits)
-                    results_to_display = [results_list['document'] for results_list in results_list]
-                    df = pd.DataFrame.from_records(results_to_display, columns=['rank','document_id','text','url'])
-                    # df['title'] = np.random.randint(1, 10, df.shape[0])
-                    df.dropna(inplace=True)
-                    #print('======================================================================')             
+                results_list.append(query_hits)
+                results_to_display = [results_list['document'] for results_list in results_list]
+                df = pd.DataFrame.from_records(results_to_display, columns=['rank','document_id','text','url'])
+                # df['title'] = np.random.randint(1, 10, df.shape[0])
+                df.dropna(inplace=True)
+                            #print('======================================================================')             
         return results_list

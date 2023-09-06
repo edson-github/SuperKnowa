@@ -55,7 +55,7 @@ class FileContextService:
             for idx, similarity in zip(sorted_indices, sorted_similarities):
                 if idx != most_similar_index:
                     related_text = text_objects[idx]
-                    if len(most_similar_text) + len(related_text) + 2 > 2000:  # +2 for "\n\n"
+                    if len(most_similar_text) + len(related_text) > 1998:  # +2 for "\n\n"
                         break
                     most_similar_text += "\n\n" + related_text
 

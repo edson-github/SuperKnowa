@@ -24,8 +24,7 @@ def format_string(doc):
     string_decode = doc.decode()
     cleantext = BeautifulSoup(string_decode, "lxml").text
     perfecttext = " ".join(cleantext.split())
-    perfecttext = re.sub(' +', ' ', perfecttext).strip('"')
-    return perfecttext
+    return re.sub(' +', ' ', perfecttext).strip('"')
 
 def process_watsonx_request():
     headers = {
