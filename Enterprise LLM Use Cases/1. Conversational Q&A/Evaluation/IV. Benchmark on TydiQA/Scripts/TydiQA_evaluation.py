@@ -109,23 +109,21 @@ def normalize_answer(s):
   return white_space_fix(remove_articles(remove_punc(lower(s))))
 
 def get_tokens(s):
-  if not s: return []
-  return normalize_answer(s).split()
+    return [] if not s else normalize_answer(s).split()
 
 def compute_f1(a_gold, a_pred):
-      gold_toks = get_tokens(a_gold)
-      pred_toks = get_tokens(a_pred)
-      common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
-      num_same = sum(common.values())
-      if len(gold_toks) == 0 or len(pred_toks) == 0:
-        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
-        return int(gold_toks == pred_toks)
-      if num_same == 0:
-        return 0
-      precision = 1.0 * num_same / len(pred_toks)
-      recall = 1.0 * num_same / len(gold_toks)
-      f1 = (2 * precision * recall) / (precision + recall)
-      return f1
+    gold_toks = get_tokens(a_gold)
+    pred_toks = get_tokens(a_pred)
+    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+    num_same = sum(common.values())
+    if len(gold_toks) == 0 or len(pred_toks) == 0:
+      # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+      return int(gold_toks == pred_toks)
+    if num_same == 0:
+      return 0
+    precision = 1.0 * num_same / len(pred_toks)
+    recall = 1.0 * num_same / len(gold_toks)
+    return (2 * precision * recall) / (precision + recall)
 
 def Sim_hash(ideal_answer,generated_answer):
     return Simhash(generated_answer).distance(Simhash(ideal_answer))
@@ -151,11 +149,7 @@ def calculate_perplexity(ideal_answer,answer):
         else:
             probability = frequency / total_tokens
         log_sum += math.log2(probability)
-    if len(answer_tokens) > 0:
-        perplexity = 2 ** (-log_sum / len(answer_tokens))
-    else:
-        perplexity = 0
-    return perplexity
+    return 2 ** (-log_sum / len(answer_tokens)) if len(answer_tokens) > 0 else 0
 
 def bleurt_score(ideal_answer,generated_answer):
 
@@ -194,9 +188,7 @@ def rouge(answer, ideal_answer):
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     # Calculate the ROUGE score
     score = scorer.score(answer, ideal_answer)
-    # Extract the F1 score for ROUGE-1
-    rouge_score = score['rouge1'].fmeasure
-    return rouge_score
+    return score['rouge1'].fmeasure
 
 # def calculate_mrr(ideal_answers,predictions):
 #     total_reciprocal_rank = 0
@@ -234,14 +226,14 @@ qs=[]
 ians=[]
 
 count=0
-max_retries = 3 
+max_retries = 3
 for i in range(len(df["data"])):
     if 'english' in df["data"][i]["paragraphs"][0]["qas"][0]["id"]:
 
         context = df["data"][i]["paragraphs"][0]["context"]
         question = df["data"][i]["paragraphs"][0]["qas"][0]["question"]
         ideal_answer = df["data"][i]["paragraphs"][0]["qas"][0]["answers"][0]["text"]
-                
+
         #print("----- Question no:",count)
 
        # if i < 10:
@@ -261,9 +253,16 @@ for i in range(len(df["data"])):
                 print("---------- question",question)
                 print("---------- question no:",count)
 
-                chat_history = f"Answer the question based on the context below. " + \
-                    "Context: "  + context + \
-                    " Question: " + question
+                chat_history = (
+                    (
+                        (
+                            "Answer the question based on the context below. "
+                            + "Context: "
+                        )
+                        + context
+                    )
+                    + " Question: "
+                ) + question
 
                 model_input = chat_history.replace("<split>", "\n")
                 print("INPUT PROMPT: ", model_input)
@@ -271,7 +270,7 @@ for i in range(len(df["data"])):
                     'Content-Type': 'application/json',
                     'Authorization': Token,
                 }
-                
+
                 json_data = {
                     # 'model_id': 'bigscience/bloom',
                     # 'model_id': 'google/flan-ul2',
@@ -280,7 +279,7 @@ for i in range(len(df["data"])):
                     # 'model_id':'flan-t5-xl-mpt-2zfTOrpU-2023-05-01-19-48-20',
                     # 'model_id':'llama-7b-hf',
 
-                    
+
 
                     # 'inputs': [
                     #     messageText,
@@ -289,7 +288,7 @@ for i in range(len(df["data"])):
                     # "inputs": ["Answer the question based only on the context below. \
                     #     Context: IBM Cloud Pak for Data offers the IBM Watson Knowledge Catalog service, which provides a number of features to incorporate such policy security, and compliance features and to govern your data. A data steward or administrator can use the IBM Watson Knowledge Catalog to build a governance catalog consisting of terms policies, and rules that can help govern and secure the data. \
                     #     Question: What is Watson Knowledge catalog?"],        
-                     
+
                         #Coga
                         "parameters": {
                           "decoding_method": "greedy",
@@ -312,7 +311,7 @@ for i in range(len(df["data"])):
                         # 'repetition_penalty': 1.0,
                     },
                 }
-                
+
                 #
                 response = requests.post('LLM.Sample.Demo', headers=headers, json=json_data)
 
@@ -336,7 +335,7 @@ for i in range(len(df["data"])):
 
                 # join unique sentences back into a text 
                 model_output = ". ".join(unique_sentences)+ "."
-                
+
                 print("FINAL ANSWER: ", model_output1) 
 
                 ans.append(model_output1)

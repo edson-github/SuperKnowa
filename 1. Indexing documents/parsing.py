@@ -37,13 +37,12 @@ def get_all_files(folder_name):
 def readdata_frompdf(file_name):
     content=''
     try:
-        pdfFileObj = open(file_name, 'rb')
-        pdfReader = PyPDF2.PdfReader(pdfFileObj)
-        for i in range(len(pdfReader.pages)):
-            pageObj = pdfReader.pages[i]
-            content =content+" "+pageObj.extract_text()
+        with open(file_name, 'rb') as pdfFileObj:
+            pdfReader = PyPDF2.PdfReader(pdfFileObj)
+            for i in range(len(pdfReader.pages)):
+                pageObj = pdfReader.pages[i]
+                content =content+" "+pageObj.extract_text()
 
-        pdfFileObj.close()
         return content
     except:
          print("file is empty")
@@ -69,18 +68,17 @@ def pre_processing_html(html_data):
     final_data1 =" "
     title_value = html_data.find('h1', class_='title topictitle1 bx--type-productive-heading-06')
     body_data =  html_data.find('div', class_='body conbody')
-    if title_value == None:
+    if title_value is None:
         final_data1 = pre_processingtext(str(html_data))
     else:
-        final_data1= str(title_value)+ "  " +str(body_data)
+        final_data1 = f"{str(title_value)}  {str(body_data)}"
         final_data1 = pre_processingtext(final_data1)
     return final_data1
 
 def create_file(file_name,data):
     file_name = file_name.replace(".html",".txt").replace(".pdf",".txt")
-    file1 = open(file_name,"w")
-    file1.write(data)
-    file1.close()
+    with open(file_name,"w") as file1:
+        file1.write(data)
 
 
 def get_parse_data(file_path):

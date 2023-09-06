@@ -70,15 +70,13 @@ class PostgresConnector:
     def get_schema(self, table: str) -> Table:
         """Return Table."""
         with self.connect() as conn:
-            columns = []
             sql = f"""
                 SELECT column_name, data_type
                 FROM information_schema.columns
                 WHERE table_name = '{table}';
             """
             schema = conn.execute(sql).fetchall()
-            for col, type_ in schema:
-                columns.append(TableColumn(name=col, dtype=type_))
+            columns = [TableColumn(name=col, dtype=type_) for col, type_ in schema]
             return Table(name=table, columns=columns)
 
 

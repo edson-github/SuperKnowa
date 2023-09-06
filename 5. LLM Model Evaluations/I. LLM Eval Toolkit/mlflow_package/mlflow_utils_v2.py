@@ -68,9 +68,9 @@ def run_mlflow(dataset_path):
         # Get the mean scores for available columns
         mean_scores = {}
         for score in leaderboard.columns[5:-4]:
-            # Perform a case-insensitive match for score column names
-            available_columns = [col for col in df.columns if col.lower() == score.lower()]
-            if available_columns:
+            if available_columns := [
+                col for col in df.columns if col.lower() == score.lower()
+            ]:
                 if score not in ['SimHash Score', 'Perplexity Score', 'Bleurt Score']:
                     mean_scores[score] = df[available_columns[0]].mean() * 100  # Multiply score by 100
                 else:
@@ -119,7 +119,7 @@ def run_mlflow(dataset_path):
     #     f1_score_value = row['F1 Score']
     #     value = row['Model Name']+"_"+row['EvaluatedOn']
     #     mlflow.log_metric(value , f1_score_value)
-        
+
 
 
     Parameters ={
@@ -181,8 +181,8 @@ def run_mlflow(dataset_path):
         plt.show()
         print("\n\n\n")
 
-    
-        
+
+
     result.to_csv("Result/leaderboard.csv", index=False)
     # Log leaderboard as artifact
     mlflow.log_artifact("Result/leaderboard.csv")

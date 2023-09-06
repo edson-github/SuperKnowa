@@ -109,23 +109,21 @@ def normalize_answer(s):
   return white_space_fix(remove_articles(remove_punc(lower(s))))
 
 def get_tokens(s):
-  if not s: return []
-  return normalize_answer(s).split()
+    return [] if not s else normalize_answer(s).split()
 
 def compute_f1(a_gold, a_pred):
-      gold_toks = get_tokens(a_gold)
-      pred_toks = get_tokens(a_pred)
-      common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
-      num_same = sum(common.values())
-      if len(gold_toks) == 0 or len(pred_toks) == 0:
-        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
-        return int(gold_toks == pred_toks)
-      if num_same == 0:
-        return 0
-      precision = 1.0 * num_same / len(pred_toks)
-      recall = 1.0 * num_same / len(gold_toks)
-      f1 = (2 * precision * recall) / (precision + recall)
-      return f1
+    gold_toks = get_tokens(a_gold)
+    pred_toks = get_tokens(a_pred)
+    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+    num_same = sum(common.values())
+    if len(gold_toks) == 0 or len(pred_toks) == 0:
+      # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+      return int(gold_toks == pred_toks)
+    if num_same == 0:
+      return 0
+    precision = 1.0 * num_same / len(pred_toks)
+    recall = 1.0 * num_same / len(gold_toks)
+    return (2 * precision * recall) / (precision + recall)
 
 def Sim_hash(ideal_answer,generated_answer):
     return Simhash(generated_answer).distance(Simhash(ideal_answer))
@@ -151,11 +149,7 @@ def calculate_perplexity(ideal_answer,answer):
         else:
             probability = frequency / total_tokens
         log_sum += math.log2(probability)
-    if len(answer_tokens) > 0:
-        perplexity = 2 ** (-log_sum / len(answer_tokens))
-    else:
-        perplexity = 0
-    return perplexity
+    return 2 ** (-log_sum / len(answer_tokens)) if len(answer_tokens) > 0 else 0
 
 def bleurt_score(ideal_answer,generated_answer):
 
@@ -194,9 +188,7 @@ def rouge(answer, ideal_answer):
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     # Calculate the ROUGE score
     score = scorer.score(answer, ideal_answer)
-    # Extract the F1 score for ROUGE-1
-    rouge_score = score['rouge1'].fmeasure
-    return rouge_score
+    return score['rouge1'].fmeasure
 
 
 df=pd.read_csv('../Data/TydiQA_Answers.csv')

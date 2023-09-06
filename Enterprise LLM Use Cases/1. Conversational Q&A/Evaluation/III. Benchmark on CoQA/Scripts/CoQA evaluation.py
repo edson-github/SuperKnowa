@@ -109,23 +109,21 @@ def normalize_answer(s):
   return white_space_fix(remove_articles(remove_punc(lower(s))))
 
 def get_tokens(s):
-  if not s: return []
-  return normalize_answer(s).split()
+    return [] if not s else normalize_answer(s).split()
 
 def compute_f1(a_gold, a_pred):
-      gold_toks = get_tokens(a_gold)
-      pred_toks = get_tokens(a_pred)
-      common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
-      num_same = sum(common.values())
-      if len(gold_toks) == 0 or len(pred_toks) == 0:
-        # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
-        return int(gold_toks == pred_toks)
-      if num_same == 0:
-        return 0
-      precision = 1.0 * num_same / len(pred_toks)
-      recall = 1.0 * num_same / len(gold_toks)
-      f1 = (2 * precision * recall) / (precision + recall)
-      return f1
+    gold_toks = get_tokens(a_gold)
+    pred_toks = get_tokens(a_pred)
+    common = collections.Counter(gold_toks) & collections.Counter(pred_toks)
+    num_same = sum(common.values())
+    if len(gold_toks) == 0 or len(pred_toks) == 0:
+      # If either is no-answer, then F1 is 1 if they agree, 0 otherwise
+      return int(gold_toks == pred_toks)
+    if num_same == 0:
+      return 0
+    precision = 1.0 * num_same / len(pred_toks)
+    recall = 1.0 * num_same / len(gold_toks)
+    return (2 * precision * recall) / (precision + recall)
 
 def Sim_hash(ideal_answer,generated_answer):
     return Simhash(generated_answer).distance(Simhash(ideal_answer))
@@ -151,11 +149,7 @@ def calculate_perplexity(ideal_answer,answer):
         else:
             probability = frequency / total_tokens
         log_sum += math.log2(probability)
-    if len(answer_tokens) > 0:
-        perplexity = 2 ** (-log_sum / len(answer_tokens))
-    else:
-        perplexity = 0
-    return perplexity
+    return 2 ** (-log_sum / len(answer_tokens)) if len(answer_tokens) > 0 else 0
 
 def bleurt_score(ideal_answer,generated_answer):
 
@@ -194,9 +188,7 @@ def rouge(answer, ideal_answer):
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     # Calculate the ROUGE score
     score = scorer.score(answer, ideal_answer)
-    # Extract the F1 score for ROUGE-1
-    rouge_score = score['rouge1'].fmeasure
-    return rouge_score
+    return score['rouge1'].fmeasure
 
 # def calculate_mrr(ideal_answers,predictions):
 #     total_reciprocal_rank = 0
@@ -224,12 +216,12 @@ chat_history = ""
 df = pd.read_json("../Data/alpaca_data.json")
 df.columns = ["question","context","ideal_answer"]
 df=df[df.context != ""].reset_index().drop("index",axis=1)
-df=df[0:1000]
+df = df[:1000]
 
 print("----- length",len(df.question))
 ans = []
 
-max_retries = 3 
+max_retries = 3
 for i in range(len(df.question)):
 
        # if i < 10:
@@ -242,107 +234,114 @@ for i in range(len(df.question)):
        #     oken = "TOKEN_1"
 
 
-        retries = 0
-        while retries < max_retries:
-            try:
+    retries = 0
+    while retries < max_retries:
+        try:
 
-                print("---------- question",df.question[i])
-                print("---------- question No:",i)
+            print("---------- question",df.question[i])
+            print("---------- question No:",i)
 
-                chat_history = f"Answer the question based on the context below. " + \
-                    "Context: "  + df.context[i] + \
-                    " Question: " + df.question[i]
+            chat_history = (
+                (
+                    (
+                        "Answer the question based on the context below. "
+                        + "Context: "
+                    )
+                    + df.context[i]
+                )
+                + " Question: "
+            ) + df.question[i]
 
-                model_input = chat_history.replace("<split>", "\n")
-                print("INPUT PROMPT: ", model_input)
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': oken,
-                }
-                
-                json_data = {
-                    # 'model_id': 'bigscience/bloom',
-                    # 'model_id': 'google/flan-ul2',
-                    'model_id': 'google/flan-t5-xxl',
-                    # 'model_id': 'google/flan-t5-xl',
-                    # 'model_id': 'ibm/coga-3b-0.1',
-                    # 'model_id':'flan-t5-xl-mpt-2zfTOrpU-2023-05-01-19-48-20',
-                    # 'model_id':'llama-7b-hf',
+            model_input = chat_history.replace("<split>", "\n")
+            print("INPUT PROMPT: ", model_input)
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': oken,
+            }
 
-                    
-
-                    # 'inputs': [
-                    #     messageText,
-                    # ],
-                    'inputs':  [model_input],
-                    # "inputs": ["Answer the question based only on the context below. \
-                    #     Context: IBM Cloud Pak for Data offers the IBM Watson Knowledge Catalog service, which provides a number of features to incorporate such policy security, and compliance features and to govern your data. A data steward or administrator can use the IBM Watson Knowledge Catalog to build a governance catalog consisting of terms policies, and rules that can help govern and secure the data. \
-                    #     Question: What is Watson Knowledge catalog?"],        
-                     
-                        #Coga
-                        "parameters": {
-                          "decoding_method": "greedy",
-                          "temperature": 0.7,
-                          "top_p": 1,
-                          "top_k": 50,
-                          "min_new_tokens": 10,
-                          "max_new_tokens": 200
-
-                        #                        # 'parameters': {
-                        # # "stream": "true",
-                        # 'temperature': 0.3,
-                        # 'min_new_tokens': 10,
-                        # 'max_new_tokens': 200,
-                        # 'stop_sequences': ['Question']
-
-                        #  Modify this parameter to reduce the batch size
-                        # 'decoding_method': 'greedy'
-                        # 'repetition_penalty': 1.0,
-                    },
-                }
-                
-                response = requests.post('llm.demo.server', headers=headers, json=json_data)
+            json_data = {
+                # 'model_id': 'bigscience/bloom',
+                # 'model_id': 'google/flan-ul2',
+                'model_id': 'google/flan-t5-xxl',
+                # 'model_id': 'google/flan-t5-xl',
+                # 'model_id': 'ibm/coga-3b-0.1',
+                # 'model_id':'flan-t5-xl-mpt-2zfTOrpU-2023-05-01-19-48-20',
+                # 'model_id':'llama-7b-hf',
 
 
-                json_response = json.loads(response.content.decode("utf-8"))
-                print("OUTPUT: ", json_response)
 
-                model_output1 = json_response['results'][0]['generated_text']
-                model_output1 = model_output1.replace("Question", '')
-                model_output1 = model_output1.replace("Answer: ", '')
+                # 'inputs': [
+                #     messageText,
+                # ],
+                'inputs':  [model_input],
+                # "inputs": ["Answer the question based only on the context below. \
+                #     Context: IBM Cloud Pak for Data offers the IBM Watson Knowledge Catalog service, which provides a number of features to incorporate such policy security, and compliance features and to govern your data. A data steward or administrator can use the IBM Watson Knowledge Catalog to build a governance catalog consisting of terms policies, and rules that can help govern and secure the data. \
+                #     Question: What is Watson Knowledge catalog?"],        
 
-                # Seprate sentences
-                sentences = model_output1.split(". ")
-                # remove duplicates SENTENCES
-                unique_sentences = list( dict.fromkeys(sentences))
+                    #Coga
+                    "parameters": {
+                      "decoding_method": "greedy",
+                      "temperature": 0.7,
+                      "top_p": 1,
+                      "top_k": 50,
+                      "min_new_tokens": 10,
+                      "max_new_tokens": 200
 
-                if not model_output1.endswith("."):
+                    #                        # 'parameters': {
+                    # # "stream": "true",
+                    # 'temperature': 0.3,
+                    # 'min_new_tokens': 10,
+                    # 'max_new_tokens': 200,
+                    # 'stop_sequences': ['Question']
+
+                    #  Modify this parameter to reduce the batch size
+                    # 'decoding_method': 'greedy'
+                    # 'repetition_penalty': 1.0,
+                },
+            }
+
+            response = requests.post('llm.demo.server', headers=headers, json=json_data)
+
+
+            json_response = json.loads(response.content.decode("utf-8"))
+            print("OUTPUT: ", json_response)
+
+            model_output1 = json_response['results'][0]['generated_text']
+            model_output1 = model_output1.replace("Question", '')
+            model_output1 = model_output1.replace("Answer: ", '')
+
+            # Seprate sentences
+            sentences = model_output1.split(". ")
+            # remove duplicates SENTENCES
+            unique_sentences = list( dict.fromkeys(sentences))
+
+            if not model_output1.endswith("."):
                 # remove the last sentence if not . at last
-                    unique_sentences.pop()
+                unique_sentences.pop()
 
-                # join unique sentences back into a text 
-                model_output = ". ".join(unique_sentences)+ "."
-                
-                print("FINAL ANSWER: ", model_output)
+            # join unique sentences back into a text 
+            model_output = ". ".join(unique_sentences)+ "."
 
-                # chat_history += f"{model_output}<split>"
-                model_output = f"{model_output}<split>"    
+            print("FINAL ANSWER: ", model_output)
 
-                ans.append(model_output1)
-                gc.collect()
-                torch.cuda.empty_cache()
-                break
+            # chat_history += f"{model_output}<split>"
+            model_output = f"{model_output}<split>"    
 
-            except Exception as e:
-                print(f"Question failed: {df.question[i]}")
-                retries += 1
-                if retries >= max_retries:
-                    print(f"Question failed after {max_retries} attempts. Moving on to the next question.")
-                    ans.append("")
-                    break  # Break the retry loop and move to the next question
-                else:
-                    print(f"Retrying question. Attempt {retries + 1} of {max_retries}.")
-                    time.sleep(2)
+            ans.append(model_output1)
+            gc.collect()
+            torch.cuda.empty_cache()
+            break
+
+        except Exception as e:
+            print(f"Question failed: {df.question[i]}")
+            retries += 1
+            if retries >= max_retries:
+                print(f"Question failed after {max_retries} attempts. Moving on to the next question.")
+                ans.append("")
+                break  # Break the retry loop and move to the next question
+            else:
+                print(f"Retrying question. Attempt {retries + 1} of {max_retries}.")
+                time.sleep(2)
 
 df["answer"] = ans
 

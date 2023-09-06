@@ -87,27 +87,26 @@ class ProcessElastic:
         all_hits = response['hits']['hits']
         i =0
         print(len(all_hits))
-        for num, doc in enumerate(all_hits):
+        pattern =  r'\{\s*:\s*[\w#-]+\s*\}|\{\s*:\s*\w+\s*\}|\n\s*\n'
+        for doc in all_hits:
             doc_id = doc["_source"]["id"]
             doc_url = doc["_source"]["url"].replace(" ","")
             doc_source = doc["_source"]["published_source"]
             string_unicode = doc["_source"]["content"]
             doc = string_unicode.encode("ascii", "ignore")
             string_decode = doc.decode()
-            keyword = "{: shortdesc} "
-            cleaned_text = self.skip_unwanted_characters(string_decode,keyword)
-            pattern =  r'\{\s*:\s*[\w#-]+\s*\}|\{\s*:\s*\w+\s*\}|\n\s*\n'
+            cleaned_text = self.skip_unwanted_characters(string_decode, "{: shortdesc} ")
             cleaned_text = re.sub(pattern, '', cleaned_text)
             cleaned_text = self.pre_processingtext(cleaned_text)
             query_hits = {
-                        "document": {
-                            "rank": i,
-                            "document_id": doc_id,
-                            "text": cleaned_text[0:4000], 
-                            "url" : doc_url,
-                            "source":doc_source
-                        },
-                    }
+                "document": {
+                    "rank": i,
+                    "document_id": doc_id,
+                    "text": cleaned_text[:4000],
+                    "url": doc_url,
+                    "source": doc_source,
+                }
+            }
 
             results_list.append(query_hits)
             results_to_display = [results_list['document'] for results_list in results_list]

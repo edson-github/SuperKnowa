@@ -158,10 +158,7 @@ def chat_multi_model(retriever, no_model):
     info_collect["retiever"] = Config.RETRIEVER
 
     insert_id = request_history_collection.insert_one(info_collect)
-    results = []
-    if "results" in info_collect:
-        results = info_collect["results"]
-
+    results = info_collect.get("results", [])
     response = { 'results': results, 'ref': str(insert_id.inserted_id) }
     return json_util.dumps(response)
 

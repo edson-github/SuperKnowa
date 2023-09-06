@@ -16,12 +16,10 @@ class MongoConnect:
         self.client = client        
     
     def get_db(self):
-        db = self.client[Config.MONGO_DB]
-        return db
+        return self.client[Config.MONGO_DB]
 
     def get_collection(self, collection_name):
-        collection = self.get_db()[collection_name]
-        return collection
+        return self.get_db()[collection_name]
     
     def get_request_history(self):
         return self.get_collection('request_history')

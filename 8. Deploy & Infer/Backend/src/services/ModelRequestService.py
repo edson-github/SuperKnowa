@@ -22,9 +22,7 @@ class ModelRequestService:
         string_decode = doc.decode()
         cleantext = BeautifulSoup(string_decode, "lxml").text
         perfecttext = " ".join(cleantext.split())
-        perfecttext = re.sub(' +', ' ', perfecttext).strip('"')
-    #   perfecttext = perfecttext[0:4000]
-        return perfecttext
+        return re.sub(' +', ' ', perfecttext).strip('"')
     #
     # The source documents are watson discovery, first it calls wd and rerank
     #
@@ -39,7 +37,7 @@ class ModelRequestService:
         duration = toc - tic
         info['discovery_load_time'] = duration
         print(f"Watson discovery authentication loading ==> {toc - tic:0.4f} seconds")
-    
+
         tic = time.perf_counter()
         wd_result = wdiscovery.WD_reranker(question=question, max_reranked_documents=4)
         toc = time.perf_counter()
@@ -56,7 +54,7 @@ class ModelRequestService:
             'Content-Type': 'application/json',
             'Authorization': Config.MODEL_AUTH_TOKEN,
         }
-        
+
         fail_info_list = []
 
         for model in self.modelConfig.models(question, context):
@@ -72,25 +70,27 @@ class ModelRequestService:
             duration = toc - tic
             print(f"model '{model['model_id']}' loading time ==> {toc - tic:0.4f} seconds")
 
-            if(response.status_code == 200):
-                model_info = {}
-                model_info['model_name'] = model['model_id']
-                model_info['model_load_time'] = duration
-                model_info['prompt'] = prompt
+            if (response.status_code == 200):
+                model_info = {
+                    'model_name': model['model_id'],
+                    'model_load_time': duration,
+                    'prompt': prompt,
+                }
                 info['success'] = model_info
                 json_response = json.loads(response.content.decode("utf-8"))
                 return json_response['results'][0]['generated_text']
             else:
                 print(f"model {model['model_id']} -> {response.status_code} -> {response}")
-                fail_info = {}
-                fail_info['model_name'] = model['model_id']
-                fail_info['model_load_time'] =duration
-                fail_info['prompt'] = prompt
-                fail_info['error_msg'] = f"Request failed with status code: {response.status_code}"
+                fail_info = {
+                    'model_name': model['model_id'],
+                    'model_load_time': duration,
+                    'prompt': prompt,
+                    'error_msg': f"Request failed with status code: {response.status_code}",
+                }
                 fail_info_list.append(fail_info)
                 info['failed_model'] = fail_info_list
-                
-            
+
+
         return "No document found for this question"
     
     #
@@ -111,7 +111,7 @@ class ModelRequestService:
             'Content-Type': 'application/json',
             'Authorization': Config.MODEL_AUTH_TOKEN,
         }
-        
+
         fail_info_list = []
 
         for model in self.modelConfig.models(question, context):
@@ -125,24 +125,26 @@ class ModelRequestService:
             duration = toc - tic
             print(f"model '{model['model_id']}' loading time ==> {toc - tic:0.4f} seconds")
 
-            if(response.status_code == 200):
-                model_info = {}
-                model_info['model_name'] = model['model_id']
-                model_info['model_load_time'] =duration
-                model_info['prompt'] = prompt
+            if (response.status_code == 200):
+                model_info = {
+                    'model_name': model['model_id'],
+                    'model_load_time': duration,
+                    'prompt': prompt,
+                }
                 info['success'] = model_info
                 json_response = json.loads(response.content.decode("utf-8"))
                 return json_response['results'][0]['generated_text'], source_url
             else:
                 print(f"model {model['model_id']} -> {response.status_code} -> {response}")
-                fail_info = {}
-                fail_info['model_name'] = model['model_id']
-                fail_info['model_load_time'] = duration
-                fail_info['prompt'] = prompt
-                fail_info['error_msg'] = f"Request failed with status code: {response.status_code}, Reason: {str(response.reason)}"
+                fail_info = {
+                    'model_name': model['model_id'],
+                    'model_load_time': duration,
+                    'prompt': prompt,
+                    'error_msg': f"Request failed with status code: {response.status_code}, Reason: {response.reason}",
+                }
                 fail_info_list.append(fail_info)
                 info['failed_model'] = fail_info_list
-            
+
         return "No document found for this question", source_url
     
 #
@@ -158,14 +160,15 @@ class ModelRequestService:
 
         results = []
 
-        if(context == "None"):
-            for i in range(int(number_of_model)):
-                non_res = {}
-                non_res["answer"] = "No document found for this question."
-                non_res["source"] = ""
-                non_res["question"] = question
-                non_res["model_id"] = ""
-                non_res['model_load_time']= ""
+        if (context == "None"):
+            for _ in range(int(number_of_model)):
+                non_res = {
+                    "answer": "No document found for this question.",
+                    "source": "",
+                    "question": question,
+                    "model_id": "",
+                    'model_load_time': "",
+                }
                 results.append(non_res)
             info_collect["results"] = results
             return "None", source_url
@@ -174,7 +177,7 @@ class ModelRequestService:
             'Content-Type': 'application/json',
             'Authorization': Config.MODEL_AUTH_TOKEN,
         }
-        
+
         fail_info_list = []
 
         count = int(number_of_model)
@@ -192,15 +195,15 @@ class ModelRequestService:
             del model["prompt"]
 
             tic = time.perf_counter()
-        
+
             response = requests.post(Config.MODEL_SERVICE_URL, headers=headers, json=model)
             toc = time.perf_counter()
             duration = toc - tic
             print(f"model '{model['model_id']}' loading time ==> {toc - tic:0.4f} seconds")
 
-            if(response.status_code == 200):
+            if (response.status_code == 200):
                 json_response = json.loads(response.content.decode("utf-8"))
-                
+
                 answer = json_response['results'][0]['generated_text']
                 afterFormat = config.format_model_output(answer)
                 result['prompt'] = prompt
@@ -215,13 +218,14 @@ class ModelRequestService:
                 count = count - 1
             else:
                 print(f"model {model['model_id']} -> {response.status_code} -> {response}")
-                fail_info = {}
-                fail_info['prompt'] = prompt
-                fail_info['model_name'] = model['model_id']
-                fail_info['model_load_time'] =duration
-                fail_info['error_msg'] = f"Request failed with status code: {response.status_code}, Reason: {str(response.reason)}"
+                fail_info = {
+                    'prompt': prompt,
+                    'model_name': model['model_id'],
+                    'model_load_time': duration,
+                    'error_msg': f"Request failed with status code: {response.status_code}, Reason: {response.reason}",
+                }
                 fail_info_list.append(fail_info)
-            
+
             info['failed_model'] = fail_info_list
             info_collect["results"] = results
                 
@@ -238,7 +242,7 @@ class ModelRequestService:
             'Content-Type': 'application/json',
             'Authorization': Config.MODEL_AUTH_TOKEN,
         }
-        
+
         fail_info_list = []
 
         for model in self.modelConfig.models(question, context):
@@ -250,7 +254,7 @@ class ModelRequestService:
             print("======================================")
             print(model, "Model-config")
             print("======================================")
-            
+
             tic = time.perf_counter()
             response = requests.post(Config.MODEL_SERVICE_URL, headers=headers, json=model)
             toc = time.perf_counter()
@@ -258,24 +262,26 @@ class ModelRequestService:
             print(f"model '{model['model_id']}' loading time ==> {toc - tic:0.4f} seconds")
 
 
-            if(response.status_code == 200):
-                model_info = {}
-                model_info['model_name'] = model['model_id']
-                model_info['model_load_time'] =duration
-                model_info['prompt'] = prompt
+            if (response.status_code == 200):
+                model_info = {
+                    'model_name': model['model_id'],
+                    'model_load_time': duration,
+                    'prompt': prompt,
+                }
                 info['success'] = model_info
                 json_response = json.loads(response.content.decode("utf-8"))
                 return json_response['results'][0]['generated_text']
             else:
                 print(f"model {model['model_id']} -> {response.status_code} -> {response}")
-                fail_info = {}
-                fail_info['model_name'] = model['model_id']
-                fail_info['prompt'] = prompt
-                fail_info['model_load_time'] =duration
-                fail_info['error_msg'] = f"Request failed with status code: {response.status_code}, Reason: {str(response.reason)}"
+                fail_info = {
+                    'model_name': model['model_id'],
+                    'prompt': prompt,
+                    'model_load_time': duration,
+                    'error_msg': f"Request failed with status code: {response.status_code}, Reason: {response.reason}",
+                }
                 fail_info_list.append(fail_info)
                 info['failed_model'] = fail_info_list
-            
+
         return "No document found for this question"
     
                 
